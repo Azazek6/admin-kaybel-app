@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -17,15 +17,30 @@ import { Spinner } from "@/shared/components/ui/spinner";
 interface BrandModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  brandToEdit?: { id: string; name: string } | null;
 }
 
-const BrandModal: React.FC<BrandModalProps> = ({ open, onOpenChange }) => {
-  const { createBrand } = useBrand();
+const BrandModal: React.FC<BrandModalProps> = ({
+  open,
+  onOpenChange,
+  brandToEdit,
+}) => {
+  const { createBrand, updateBrand } = useBrand();
 
-  const [brand, setBrand] = useState({
-    name: "",
-  });
+  const [brand, setBrand] = useState({ name: "" });
   const [loading, setLoading] = useState(false);
+
+  const isEditing = !!brandToEdit;
+
+  useEffect(() => {
+    if (open) {
+      if (brandToEdit) {
+        setBrand({ name: brandToEdit.name });
+      } else {
+        setBrand({ name: "" });
+      }
+    }
+  }, [open, brandToEdit]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -36,17 +51,21 @@ const BrandModal: React.FC<BrandModalProps> = ({ open, onOpenChange }) => {
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    setLoading(true);
     e.preventDefault();
+    setLoading(true);
 
     try {
-      await createBrand(brand);
-      setBrand({ name: "" });
+      if (isEditing && brandToEdit) {
+        await updateBrand(brandToEdit.id, brand);
+        toast.success("Se ha actualizado la marca correctamente");
+      } else {
+        await createBrand(brand);
+        toast.success("Se ha registrado la marca");
+      }
+
       onOpenChange(false);
-      toast.success("Se ha registrado la marca");
     } catch (error: any) {
-      toast.error(error);
-      setLoading(false);
+      toast.error(error.message || "Ocurrió un error");
     } finally {
       setLoading(false);
     }
@@ -56,9 +75,13 @@ const BrandModal: React.FC<BrandModalProps> = ({ open, onOpenChange }) => {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-112.5 bg-white">
         <DialogHeader>
-          <DialogTitle className="text-xl">Nueva Marca</DialogTitle>
+          <DialogTitle className="text-xl">
+            {isEditing ? "Editar Marca" : "Nueva Marca"}
+          </DialogTitle>
           <DialogDescription className="text-gray-500">
-            Ingresa el nombre de la nueva marca para agregarla al catálogo.
+            {isEditing
+              ? "Actualiza el nombre de la marca en tu catálogo."
+              : "Ingresa el nombre de la nueva marca para agregarla al catálogo."}
           </DialogDescription>
         </DialogHeader>
 
@@ -73,6 +96,7 @@ const BrandModal: React.FC<BrandModalProps> = ({ open, onOpenChange }) => {
               value={brand.name}
               onChange={handleChange}
               placeholder="Ej. Dior..."
+              required
             />
           </div>
 
@@ -85,7 +109,7 @@ const BrandModal: React.FC<BrandModalProps> = ({ open, onOpenChange }) => {
               Cancelar
             </Button>
             <Button
-              disabled={loading}
+              disabled={loading || !brand.name.trim()}
               type="submit"
               className="bg-gray-900 hover:bg-gray-800 text-white px-4 py-2 disabled:opacity-70 disabled:cursor-not-allowed"
             >

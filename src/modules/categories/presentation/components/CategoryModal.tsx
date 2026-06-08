@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -17,18 +17,32 @@ import { useCategory } from "../hooks/useCategory";
 interface CategoryModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  categoryToEdit?: { id: string; name: string } | null;
 }
 
 const CategoryModal: React.FC<CategoryModalProps> = ({
   open,
   onOpenChange,
+  categoryToEdit,
 }) => {
-  const { createCategory } = useCategory();
+  const { createCategory, updateCategory } = useCategory();
 
   const [category, setCategory] = useState({
     name: "",
   });
   const [loading, setLoading] = useState(false);
+
+  const isEditing = !!categoryToEdit;
+
+  useEffect(() => {
+    if (open) {
+      if (categoryToEdit) {
+        setCategory({ name: categoryToEdit.name });
+      } else {
+        setCategory({ name: "" });
+      }
+    }
+  }, [open, categoryToEdit]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -43,13 +57,17 @@ const CategoryModal: React.FC<CategoryModalProps> = ({
     e.preventDefault();
 
     try {
-      await createCategory(category);
-      setCategory({ name: "" });
+      if (isEditing && categoryToEdit) {
+        await updateCategory(categoryToEdit.id, category);
+        toast.success("Se ha actualizado la categoria correctamente");
+      } else {
+        await createCategory(category);
+        toast.success("Se ha registrado la categoria");
+      }
       onOpenChange(false);
       toast.success("Se ha registrado la categoria");
     } catch (error: any) {
       toast.error(error);
-      setLoading(false);
     } finally {
       setLoading(false);
     }
@@ -59,9 +77,13 @@ const CategoryModal: React.FC<CategoryModalProps> = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-112.5 bg-white">
         <DialogHeader>
-          <DialogTitle className="text-xl">Nueva Categoria</DialogTitle>
+          <DialogTitle className="text-xl">
+            {isEditing ? "Editar Categoria" : "Nueva Categoria"}
+          </DialogTitle>
           <DialogDescription className="text-gray-500">
-            Ingresa el nombre de la nueva categoria para agregarla al catálogo.
+            {isEditing
+              ? "Actualiza el nombre de la categoria en tu catálogo."
+              : "Ingresa el nombre de la nueva categoria para agregarla al catálogo."}
           </DialogDescription>
         </DialogHeader>
 
@@ -88,7 +110,7 @@ const CategoryModal: React.FC<CategoryModalProps> = ({
               Cancelar
             </Button>
             <Button
-              disabled={loading}
+              disabled={loading || !category.name.trim()}
               type="submit"
               className="bg-gray-900 hover:bg-gray-800 text-white px-4 py-2 disabled:opacity-70 disabled:cursor-not-allowed"
             >

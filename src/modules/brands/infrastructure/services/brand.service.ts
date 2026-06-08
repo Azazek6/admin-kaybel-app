@@ -14,6 +14,17 @@ export class BrandService {
   async create(dto: BrandDto): Promise<void> {
     return this.brandRepository.create(dto);
   }
+
+  async update(id: string, dto: BrandDto): Promise<void> {
+    return this.brandRepository.update(id, dto);
+  }
+
+  async changeStatusBrand(
+    id: string,
+    status: "Active" | "Inactive",
+  ): Promise<void> {
+    return this.brandRepository.changeStatusBrand(id, status);
+  }
 }
 
 export const brandService = new BrandService(brandRepository);

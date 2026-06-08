@@ -3,6 +3,7 @@ import { Brand, BrandDto } from "../../domain/brand.type";
 import { brandService } from "../../infrastructure/services/brand.service";
 import useSWR, { useSWRConfig } from "swr";
 import { ApiPagination } from "@/shared/types/general";
+import { toast } from "sonner";
 
 export const useBrand = () => {
   const { mutate } = useSWRConfig();
@@ -27,9 +28,37 @@ export const useBrand = () => {
     }
   };
 
+  const updateBrand = async (id: string, request: BrandDto): Promise<void> => {
+    setIsLoading(true);
+    try {
+      await brandService.update(id, request);
+      mutate((key) => typeof key === "string" && key.startsWith("/brands"));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const changeStatusBrand = async (
+    id: string,
+    status: "Active" | "Inactive",
+  ): Promise<void> => {
+    const isActive = status === "Active";
+    const accion = isActive ? "habilitada" : "deshabilitada";
+    setIsLoading(true);
+    try {
+      await brandService.changeStatusBrand(id, status);
+      toast.success(`La marca a sido ${accion}`);
+      mutate((key) => typeof key === "string" && key.startsWith("/brands"));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return {
     getBrands,
     createBrand,
+    updateBrand,
+    changeStatusBrand,
     isLoading,
     setIsLoading,
   };

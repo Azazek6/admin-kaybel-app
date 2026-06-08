@@ -10,6 +10,19 @@ export class BrandRepository implements IBrandRepository {
     return data;
   }
 
+  async update(id: string, dto: BrandDto): Promise<void> {
+    const { data } = await apiClient.patch(`/brands/${id}`, dto);
+    return data;
+  }
+
+  async changeStatusBrand(
+    id: string,
+    status: "Active" | "Inactive",
+  ): Promise<void> {
+    const { data } = await apiClient.patch(`/brands/${id}/status`, { status });
+    return data;
+  }
+
   getBrands(): Fetcher<ApiPagination<Brand>> {
     return async (route: string) => {
       const response = await apiClient.get<ApiPagination<Brand>>(route);

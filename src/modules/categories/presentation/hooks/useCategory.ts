@@ -3,6 +3,7 @@ import useSWR, { useSWRConfig } from "swr";
 import { ApiPagination } from "@/shared/types/general";
 import { Category, CategoryDto } from "../../domain/category.type";
 import { categoryService } from "../../infrastructure/services/category.service";
+import { toast } from "sonner";
 
 export const useCategory = () => {
   const { mutate } = useSWRConfig();
@@ -27,9 +28,40 @@ export const useCategory = () => {
     }
   };
 
+  const updateCategory = async (
+    id: string,
+    request: CategoryDto,
+  ): Promise<void> => {
+    setIsLoading(true);
+    try {
+      await categoryService.update(id, request);
+      mutate((key) => typeof key === "string" && key.startsWith("/categories"));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const changeStatusCategory = async (
+    id: string,
+    status: "Active" | "Inactive",
+  ): Promise<void> => {
+    const isActive = status === "Active";
+    const accion = isActive ? "habilitada" : "deshabilitada";
+    setIsLoading(true);
+    try {
+      await categoryService.changeStatusCategory(id, status);
+      toast.success(`La categoria a sido ${accion}`);
+      mutate((key) => typeof key === "string" && key.startsWith("/categories"));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return {
     getCategories,
     createCategory,
+    updateCategory,
+    changeStatusCategory,
     isLoading,
     setIsLoading,
   };

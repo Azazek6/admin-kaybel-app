@@ -10,6 +10,21 @@ export class CategoryRepository implements ICategoryRepository {
     return data;
   }
 
+  async update(id: string, dto: CategoryDto): Promise<void> {
+    const { data } = await apiClient.patch(`/categories/${id}`, dto);
+    return data;
+  }
+
+  async changeStatusCategory(
+    id: string,
+    status: "Active" | "Inactive",
+  ): Promise<void> {
+    const { data } = await apiClient.patch(`/categories/${id}/status`, {
+      status,
+    });
+    return data;
+  }
+
   getCategories(): Fetcher<ApiPagination<Category>> {
     return async (route: string) => {
       const response = await apiClient.get<ApiPagination<Category>>(route);
